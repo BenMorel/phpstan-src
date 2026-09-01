@@ -281,7 +281,7 @@ final class MatchHandler implements ExprHandler, PerFileAnalysisResettable
 						$matchArmBodyScope,
 						$storage,
 						$nodeCallback,
-						ExpressionContext::createTopLevel($context->shouldResolveTemplateArguments()),
+						$this->createArmBodyContext($context),
 					);
 					$armScope = $armResult->getScope();
 					$scope = $scope->addTemplateArgumentConstraints($armScope->getTemplateArgumentConstraints());
@@ -321,7 +321,7 @@ final class MatchHandler implements ExprHandler, PerFileAnalysisResettable
 				$defaultArmBodyScope = $matchScope;
 				$matchArmBody = new MatchExpressionArmBody($matchScope, $arm->body);
 				$armNodes[$i] = new MatchExpressionArm($matchArmBody, [], $arm->getStartLine());
-				$armResult = $nodeScopeResolver->processExprNode($stmt, $arm->body, $matchScope, $storage, $nodeCallback, ExpressionContext::createTopLevel($context->shouldResolveTemplateArguments()));
+				$armResult = $nodeScopeResolver->processExprNode($stmt, $arm->body, $matchScope, $storage, $nodeCallback, $this->createArmBodyContext($context));
 				$matchScope = $armResult->getScope();
 				$scope = $scope->addTemplateArgumentConstraints($matchScope->getTemplateArgumentConstraints());
 				$hasYield = $hasYield || $armResult->hasYield();
@@ -428,7 +428,7 @@ final class MatchHandler implements ExprHandler, PerFileAnalysisResettable
 				$bodyScope,
 				$storage,
 				$nodeCallback,
-				ExpressionContext::createTopLevel($context->shouldResolveTemplateArguments()),
+				$this->createArmBodyContext($context),
 			);
 			$armScope = $armResult->getScope();
 			$scope = $scope->addTemplateArgumentConstraints($armScope->getTemplateArgumentConstraints());
@@ -609,6 +609,17 @@ final class MatchHandler implements ExprHandler, PerFileAnalysisResettable
 		}
 
 		return false;
+	}
+
+	/**
+	 * An arm's body is the match's value: it computes what the match computes.
+	 */
+	private function createArmBodyContext(ExpressionContext $context): ExpressionContext
+	{
+		$armContext = ExpressionContext::createTopLevel($context->shouldResolveTemplateArguments());
+		$valueFlowTarget = $context->getValueFlowTarget();
+
+		return $valueFlowTarget !== null ? $armContext->enterValueFlow($valueFlowTarget, false) : $armContext;
 	}
 
 }
