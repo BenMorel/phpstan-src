@@ -141,11 +141,13 @@ final class FunctionHandler implements StmtHandler
 
 				$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 			});
+			$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
 			try {
 				$statementResult = $nodeScopeResolver->processStmtNodesInternal($stmt, $stmt->stmts, $functionScope, $bodyStorage, $nodeCallback, StatementContext::createTopLevel($context->shouldResolveTemplateArguments()))->toPublic();
 			} finally {
 				$nodeScopeResolver->popNodeGatherer();
 			}
+			$variableWritesFrame = $nodeScopeResolver->popVariableWritesFrame();
 
 			$nodeScopeResolver->callNodeCallback($nodeCallback, new FunctionReturnStatementsNode(
 				$stmt,
@@ -157,6 +159,7 @@ final class FunctionHandler implements StmtHandler
 				array_merge($statementResult->getImpurePoints(), $functionImpurePoints),
 				$functionReflection,
 			), $functionScope, $bodyStorage);
+			$nodeScopeResolver->callNodeCallback($nodeCallback, $variableWritesFrame->createNode($stmt), $functionScope, $bodyStorage);
 		} finally {
 			$scope->popExpressionResultStorage();
 		}

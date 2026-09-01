@@ -220,6 +220,9 @@ final class ClosureTypeResolver implements PerFileAnalysisResettable
 		$invalidateExpressions = [];
 
 		try {
+			// a throwaway write-tracking frame: this walk must not register the
+			// body's writes into the enclosing function-like's frame
+			$this->nodeScopeResolver->pushVariableWritesFrame($expr->params);
 			$walkStorage = new ExpressionResultStorage();
 			$closureScope->pushExpressionResultStorage($walkStorage);
 			$closureStatementResult = $this->nodeScopeResolver->processStmtNodesInternal($expr, $expr->stmts, $closureScope, $walkStorage, static function (Node $node, Scope $scope) use ($closureScope, &$closureReturnStatements, &$closureYieldStatements, &$closureExecutionEnds, &$closureImpurePoints, &$invalidateExpressions): void {
@@ -261,6 +264,7 @@ final class ClosureTypeResolver implements PerFileAnalysisResettable
 			}, StatementContext::createTopLevel())->toPublic();
 		} finally {
 			$closureScope->popExpressionResultStorage();
+			$this->nodeScopeResolver->popVariableWritesFrame();
 			self::$resolveClosureTypeDepth--;
 		}
 

@@ -18,6 +18,7 @@ use PHPStan\Node\CatchWithUnthrownExceptionNode;
 use PHPStan\Node\Expr\TypeExpr;
 use PHPStan\Node\FinallyExitPointsNode;
 use PHPStan\Node\ReturnAfterFinallyNode;
+use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableAssignNode;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\Type\NeverType;
@@ -203,6 +204,7 @@ final class TryCatchHandler implements StmtHandler
 			}
 
 			$variableName = null;
+			$catchWrite = null;
 			if ($catchNode->var !== null) {
 				if (!is_string($catchNode->var->name)) {
 					throw new ShouldNotHappenException();
@@ -210,9 +212,10 @@ final class TryCatchHandler implements StmtHandler
 
 				$variableName = $catchNode->var->name;
 				$nodeScopeResolver->callNodeCallback($nodeCallback, new VariableAssignNode($catchNode->var, new TypeExpr($catchType)), $scope, $storage);
+				$catchWrite = $nodeScopeResolver->recordVariableWrite($catchNode->var, VariableWrite::KIND_CATCH);
 			}
 
-			$catchScopeResult = $nodeScopeResolver->processStmtNodesInternal($catchNode, $catchNode->stmts, $catchScope->enterCatchType($catchType, $variableName), $storage, $nodeCallback, $context);
+			$catchScopeResult = $nodeScopeResolver->processStmtNodesInternal($catchNode, $catchNode->stmts, $catchScope->enterCatchType($catchType, $variableName, $catchWrite, $catchWrite !== null && $variableName !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($variableName) : []), $storage, $nodeCallback, $context);
 			$catchScopeForFinally = $catchScopeResult->getScope();
 
 			$finalScope = $catchScopeResult->isAlwaysTerminating() ? $finalScope : $catchScopeResult->getScope()->mergeWith($finalScope);

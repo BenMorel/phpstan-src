@@ -56,6 +56,7 @@ use PHPStan\Node\Expr\TypeExpr;
 use PHPStan\Node\IssetExpr;
 use PHPStan\Node\Printer\ExprPrinter;
 use PHPStan\Node\PropertyAssignNode;
+use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableAssignNode;
 use PHPStan\Node\VirtualNode;
 use PHPStan\Php\PhpVersion;
@@ -149,9 +150,21 @@ final class AssignHandler implements ExprHandler
 		$valueScope = $valueBeforeScope;
 		$valueImpurePoints = [];
 		if ($expr instanceof AssignRef) {
+			// both sides alias one slot from now on - neither is tracked for
+			// unused writes
+			$aliasedVar = $expr->var;
+			while ($aliasedVar instanceof ArrayDimFetch) {
+				$aliasedVar = $aliasedVar->var;
+			}
+			if ($aliasedVar instanceof Variable && is_string($aliasedVar->name)) {
+				$nodeScopeResolver->markVariableUntracked($aliasedVar->name);
+			}
 			$referencedExpr = $expr->expr;
 			while ($referencedExpr instanceof ArrayDimFetch) {
 				$referencedExpr = $referencedExpr->var;
+			}
+			if ($referencedExpr instanceof Variable && is_string($referencedExpr->name)) {
+				$nodeScopeResolver->markVariableUntracked($referencedExpr->name);
 			}
 
 			if ($referencedExpr instanceof PropertyFetch || $referencedExpr instanceof StaticPropertyFetch) {
@@ -615,6 +628,7 @@ final class AssignHandler implements ExprHandler
 				targetReadResult: $targetReadResult,
 				targetChainResults: $targetChainResults,
 				variableNameResult: $variableNameResult,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -814,6 +828,7 @@ final class AssignHandler implements ExprHandler
 				offsetSetTargetResult: $offsetSetTargetResult,
 				targetReadResult: $targetReadResult,
 				targetChainResults: $targetChainResults,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -879,6 +894,7 @@ final class AssignHandler implements ExprHandler
 				propertyName: $propertyName,
 				targetReadResult: $targetReadResult,
 				targetChainResults: $targetChainResults,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -939,6 +955,7 @@ final class AssignHandler implements ExprHandler
 				propertyHolderType: $propertyHolderType,
 				targetReadResult: $targetReadResult,
 				targetChainResults: $targetChainResults,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -955,6 +972,7 @@ final class AssignHandler implements ExprHandler
 				$throwPoints,
 				$impurePoints,
 				$isAlwaysTerminating,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -1005,6 +1023,7 @@ final class AssignHandler implements ExprHandler
 				assignedPropertyExpr: $assignedPropertyExpr,
 				existingOffsetTypes: $offsetTypes,
 				existingOffsetNativeTypes: $offsetNativeTypes,
+				writeSiteKind: $mode->getWriteSiteKind(),
 			);
 		}
 
@@ -1039,6 +1058,7 @@ final class AssignHandler implements ExprHandler
 			$isAlwaysTerminating,
 			targetReadResult: $targetReadResult,
 			targetChainResults: $targetChainResults,
+			writeSiteKind: $mode->getWriteSiteKind(),
 		);
 	}
 
@@ -1218,7 +1238,15 @@ final class AssignHandler implements ExprHandler
 				}
 
 				$nodeScopeResolver->callNodeCallback($nodeCallback, new VariableAssignNode($var, $assignedExpr), $scopeBeforeAssignEval, $storage);
-				$scope = $scope->assignVariable($var->name, $type, $this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain()), TrinaryLogic::createYes());
+				$write = $target->getWriteSiteKind() !== null ? $nodeScopeResolver->recordVariableWrite($var, $target->getWriteSiteKind()) : null;
+				$scope = $scope->assignVariable(
+					$var->name,
+					$type,
+					$this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain()),
+					TrinaryLogic::createYes(),
+					write: $write,
+					supersededMarkerExprs: $write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
+				);
 				foreach ($conditionalExpressions as $exprString => $holders) {
 					$scope = $scope->addConditionalExpressions((string) $exprString, $holders);
 				}
@@ -1319,7 +1347,19 @@ final class AssignHandler implements ExprHandler
 			if ($varType->isArray()->yes() || !(new ObjectType(ArrayAccess::class))->isSuperTypeOf($varType)->yes()) {
 				if ($var instanceof Variable && is_string($var->name)) {
 					$nodeScopeResolver->callNodeCallback($nodeCallback, new VariableAssignNode($var, new TypeExpr($valueToWrite)), $scopeBeforeAssignEval, $storage);
-					$scope = $scope->assignVariable($var->name, $valueToWrite, $nativeValueToWrite, TrinaryLogic::createYes());
+					// an offset write on an object (ArrayAccess, mixed) mutates a shared
+					// handle - only a value container (array, string) makes it a write site
+					$write = $target->getWriteSiteKind() !== null && ($varType->isArray()->yes() || $varType->isString()->yes())
+						? $nodeScopeResolver->recordVariableWrite($var, VariableWrite::KIND_ARRAY_DIM_WRITE)
+						: null;
+					$scope = $scope->assignVariable(
+						$var->name,
+						$valueToWrite,
+						$nativeValueToWrite,
+						TrinaryLogic::createYes(),
+						write: $write,
+						supersededMarkerExprs: $write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
+					);
 				} else {
 					if ($var instanceof PropertyFetch || $var instanceof StaticPropertyFetch) {
 						$nodeScopeResolver->callNodeCallback($nodeCallback, new PropertyAssignNode($var, $assignedPropertyExpr, $isAssignOp), $scopeBeforeAssignEval, $storage);
@@ -1548,6 +1588,9 @@ final class AssignHandler implements ExprHandler
 				if ($arrayItem === null) {
 					continue;
 				}
+				if ($arrayItem->byRef && $arrayItem->value instanceof Variable && is_string($arrayItem->value->name)) {
+					$nodeScopeResolver->markVariableUntracked($arrayItem->value->name);
+				}
 
 				$itemScope = $scope;
 				if ($enterExpressionAssign) {
@@ -1587,7 +1630,7 @@ final class AssignHandler implements ExprHandler
 					$getOffsetValueTypeExpr,
 					$nodeCallback,
 					$context,
-					$enterExpressionAssign ? AssignTargetWalkMode::assign() : AssignTargetWalkMode::virtualAssign(),
+					$enterExpressionAssign ? AssignTargetWalkMode::assign(VariableWrite::KIND_LIST_ITEM) : AssignTargetWalkMode::virtualAssign($target->getWriteSiteKind() !== null ? VariableWrite::KIND_LIST_ITEM : null),
 				);
 				$result = $this->applyWrite(
 					$nodeScopeResolver,
@@ -2148,6 +2191,9 @@ final class AssignHandler implements ExprHandler
 			}
 
 			$refVarName = $arrayItem->value->name;
+			// `$root = [&$ref]` aliases the two slots from now on
+			$nodeScopeResolver->markVariableUntracked($rootVarName);
+			$nodeScopeResolver->markVariableUntracked($refVarName);
 			$dimFetchExpr = new ArrayDimFetch($parentExpr, $dimExpr);
 			// a plain variable read is scope state - no need to price a synthetic
 			// Variable node on demand (mirrors VariableHandler's typeCallback)
