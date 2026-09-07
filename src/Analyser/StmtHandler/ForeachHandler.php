@@ -527,7 +527,8 @@ final class ForeachHandler implements StmtHandler
 					$originalScope->getIterableValueType($nativeIterateeType),
 				),
 				$nodeCallback,
-				writeSiteKind: VariableWrite::KIND_FOREACH_VALUE,
+				null,
+				VariableWrite::KIND_FOREACH_VALUE,
 			)->getScope();
 			$vars = $nodeScopeResolver->getAssignedVariables($stmt->valueVar);
 			if (
@@ -547,7 +548,8 @@ final class ForeachHandler implements StmtHandler
 						$originalScope->getIterableKeyType($nativeIterateeType),
 					),
 					$nodeCallback,
-					writeSiteKind: VariableWrite::KIND_FOREACH_KEY,
+					null,
+					VariableWrite::KIND_FOREACH_KEY,
 				)->getScope();
 				$vars = array_merge($vars, $nodeScopeResolver->getAssignedVariables($stmt->keyVar));
 			}
@@ -710,8 +712,9 @@ final class ForeachHandler implements StmtHandler
 					$valueType,
 					$nativeValueType,
 					TrinaryLogic::createYes(),
-					write: $valueWrite,
-					supersededMarkerExprs: $valueWrite !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($valueVarName) : [],
+					[],
+					$valueWrite,
+					$valueWrite !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($valueVarName) : [],
 				);
 				$iterScope = $iterScope->assignExpression(
 					new OriginalForeachValueExpr($valueVarName),
@@ -724,8 +727,9 @@ final class ForeachHandler implements StmtHandler
 						$keyType,
 						$nativeKeyType,
 						TrinaryLogic::createYes(),
-						write: $keyWrite,
-						supersededMarkerExprs: $keyWrite !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($keyVarName) : [],
+						[],
+						$keyWrite,
+						$keyWrite !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($keyVarName) : [],
 					);
 					$iterScope = $iterScope->assignExpression(
 						new OriginalForeachKeyExpr($keyVarName),

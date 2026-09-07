@@ -3023,8 +3023,9 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter
 			$valueType,
 			$nativeValueType,
 			TrinaryLogic::createYes(),
-			write: $valueWrite,
-			supersededMarkerExprs: $valueSupersededMarkerExprs,
+			[],
+			$valueWrite,
+			$valueSupersededMarkerExprs,
 		);
 		// Track the original foreach value so narrowings applied to the value
 		// variable (e.g. is_string($type)) can later be projected back onto the
@@ -3077,8 +3078,9 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter
 			$keyType,
 			$nativeKeyType,
 			TrinaryLogic::createYes(),
-			write: $write,
-			supersededMarkerExprs: $supersededMarkerExprs,
+			[],
+			$write,
+			$supersededMarkerExprs,
 		);
 
 		$originalForeachKeyExpr = new OriginalForeachKeyExpr($keyName);
@@ -3108,8 +3110,9 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter
 			TypeCombinator::intersect($catchType, new ObjectType(Throwable::class)),
 			TypeCombinator::intersect($catchType, new ObjectType(Throwable::class)),
 			TrinaryLogic::createYes(),
-			write: $write,
-			supersededMarkerExprs: $supersededMarkerExprs,
+			[],
+			$write,
+			$supersededMarkerExprs,
 		);
 	}
 
