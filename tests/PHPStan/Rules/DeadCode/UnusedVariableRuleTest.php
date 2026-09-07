@@ -2,11 +2,9 @@
 
 namespace PHPStan\Rules\DeadCode;
 
-use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\RequiresPhp;
-use const PHP_VERSION_ID;
 
 /**
  * @extends RuleTestCase<UnusedVariableRule>
@@ -14,11 +12,9 @@ use const PHP_VERSION_ID;
 class UnusedVariableRuleTest extends RuleTestCase
 {
 
-	private int $phpVersionId = PHP_VERSION_ID;
-
 	protected function getRule(): Rule
 	{
-		return new UnusedVariableRule(new PhpVersion($this->phpVersionId));
+		return new UnusedVariableRule();
 	}
 
 	public function testRule(): void
@@ -238,15 +234,15 @@ class UnusedVariableRuleTest extends RuleTestCase
 		]);
 	}
 
+	#[RequiresPhp('< 8.0.0')]
 	public function testCatchVariableNotReportedBeforePhp80(): void
 	{
-		$this->phpVersionId = 70400;
 		$this->analyse([__DIR__ . '/data/unused-variable-catch.php'], []);
 	}
 
+	#[RequiresPhp('>= 8.0.0')]
 	public function testCatchVariableReportedSincePhp80(): void
 	{
-		$this->phpVersionId = 80000;
 		$this->analyse([__DIR__ . '/data/unused-variable-catch.php'], [
 			[
 				'Value assigned to variable $e is never read.',

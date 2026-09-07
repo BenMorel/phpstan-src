@@ -6,7 +6,6 @@ use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
-use PHPStan\Php\PhpVersion;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use function sprintf;
@@ -18,7 +17,7 @@ use function str_starts_with;
 final class UnusedVariableRule implements Rule
 {
 
-	public function __construct(private PhpVersion $phpVersion)
+	public function __construct()
 	{
 	}
 
@@ -47,7 +46,7 @@ final class UnusedVariableRule implements Rule
 			}
 			if (
 				$write->getKind() === VariableWrite::KIND_CATCH
-				&& !$this->phpVersion->supportsNoncapturingCatches()
+				&& !$scope->getPhpVersion()->supportsNoncapturingCatches()->yes()
 			) {
 				continue;
 			}
