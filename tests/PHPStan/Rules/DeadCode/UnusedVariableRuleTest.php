@@ -251,4 +251,42 @@ class UnusedVariableRuleTest extends RuleTestCase
 		]);
 	}
 
+	public function testRedundantAssignment(): void
+	{
+		$this->analyse([__DIR__ . '/data/unused-variable-redundant.php'], [
+			[
+				'Variable $x is assigned the value it already has.',
+				26,
+			],
+			[
+				'Value assigned to variable $x is never read.',
+				42,
+			],
+			[
+				'Variable $x is assigned the value it already has.',
+				43,
+			],
+			[
+				'Variable $x is assigned the value it already has.',
+				51,
+			],
+			[
+				'Variable $s is assigned the value it already has.',
+				60,
+			],
+			[
+				'Variable $a is assigned the value it already has.',
+				69,
+			],
+			[
+				'Value assigned to variable $x is never read.',
+				95,
+			],
+			[
+				'Variable $x is assigned the value it already has.',
+				118,
+			],
+		]);
+	}
+
 }

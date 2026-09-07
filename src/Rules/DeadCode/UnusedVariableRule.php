@@ -39,9 +39,6 @@ final class UnusedVariableRule implements Rule
 			if ($node->isUntracked($name)) {
 				continue;
 			}
-			if ($node->isRead($write)) {
-				continue;
-			}
 			if (str_starts_with($name, '_')) {
 				continue;
 			}
@@ -56,8 +53,20 @@ final class UnusedVariableRule implements Rule
 				continue;
 			}
 
-			$errors[] = RuleErrorBuilder::message(sprintf('Value assigned to variable $%s is never read.', $name))
-				->identifier('variable.unused')
+			if (!$node->isRead($write)) {
+				$errors[] = RuleErrorBuilder::message(sprintf('Value assigned to variable $%s is never read.', $name))
+					->identifier('variable.unused')
+					->line($write->getVariable()->getStartLine())
+					->build();
+				continue;
+			}
+
+			if (!$node->isRedundant($write)) {
+				continue;
+			}
+
+			$errors[] = RuleErrorBuilder::message(sprintf('Variable $%s is assigned the value it already has.', $name))
+				->identifier('variable.redundantAssignment')
 				->line($write->getVariable()->getStartLine())
 				->build();
 		}

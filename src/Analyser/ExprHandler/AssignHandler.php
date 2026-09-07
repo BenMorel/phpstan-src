@@ -1239,10 +1239,14 @@ final class AssignHandler implements ExprHandler
 
 				$nodeScopeResolver->callNodeCallback($nodeCallback, new VariableAssignNode($var, $assignedExpr), $scopeBeforeAssignEval, $storage);
 				$write = $target->getWriteSiteKind() !== null ? $nodeScopeResolver->recordVariableWrite($var, $target->getWriteSiteKind()) : null;
+				$nativeType = $this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain());
+				if ($write !== null && $write->getKind() === VariableWrite::KIND_ASSIGN) {
+					$nodeScopeResolver->markVariableWriteRedundancy($write, $this->isRedundantAssignment($scope, $var->name, $type, $nativeType));
+				}
 				$scope = $scope->assignVariable(
 					$var->name,
 					$type,
-					$this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain()),
+					$nativeType,
 					TrinaryLogic::createYes(),
 					[],
 					$write,
@@ -2128,6 +2132,30 @@ final class AssignHandler implements ExprHandler
 		}
 
 		return count($rhsImpurePoints) === 0;
+	}
+
+	/**
+	 * Whether the assignment stores the value the variable provably already
+	 * has: its current type allows exactly one value and the assigned type
+	 * equals it. Required in the native flavour too, so a phpDoc-only
+	 * certainty never reports on its own.
+	 */
+	private function isRedundantAssignment(MutatingScope $scope, string $variableName, Type $type, Type $nativeType): bool
+	{
+		if (!$scope->hasVariableType($variableName)->yes()) {
+			return false;
+		}
+		$finiteTypes = $scope->getVariableType($variableName)->getFiniteTypes();
+		if (count($finiteTypes) !== 1 || !$finiteTypes[0]->equals($type)) {
+			return false;
+		}
+		$nativeScope = $scope->doNotTreatPhpDocTypesAsCertain();
+		if (!$nativeScope->hasVariableType($variableName)->yes()) {
+			return false;
+		}
+		$nativeFiniteTypes = $nativeScope->getVariableType($variableName)->getFiniteTypes();
+
+		return count($nativeFiniteTypes) === 1 && $nativeFiniteTypes[0]->equals($nativeType);
 	}
 
 	/**

@@ -22,6 +22,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	/**
 	 * @param list<VariableWrite> $writes
 	 * @param array<int, true> $readWriteIds
+	 * @param array<int, true> $redundantWriteIds
 	 * @param array<string, true> $referencedVariableNames
 	 * @param array<string, true> $untrackedVariableNames
 	 */
@@ -29,6 +30,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 		private Node\FunctionLike $functionLike,
 		private array $writes,
 		private array $readWriteIds,
+		private array $redundantWriteIds,
 		private array $referencedVariableNames,
 		private array $untrackedVariableNames,
 		private bool $opaque,
@@ -81,6 +83,14 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	public function isRead(VariableWrite $write): bool
 	{
 		return isset($this->readWriteIds[$write->getId()]);
+	}
+
+	/**
+	 * Whether the write assigns the value the variable provably already has.
+	 */
+	public function isRedundant(VariableWrite $write): bool
+	{
+		return isset($this->redundantWriteIds[$write->getId()]);
 	}
 
 	/**
