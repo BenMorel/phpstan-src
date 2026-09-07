@@ -1244,8 +1244,9 @@ final class AssignHandler implements ExprHandler
 					$type,
 					$this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain()),
 					TrinaryLogic::createYes(),
-					write: $write,
-					supersededMarkerExprs: $write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
+					[],
+					$write,
+					$write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
 				);
 				foreach ($conditionalExpressions as $exprString => $holders) {
 					$scope = $scope->addConditionalExpressions((string) $exprString, $holders);
@@ -1357,8 +1358,9 @@ final class AssignHandler implements ExprHandler
 						$valueToWrite,
 						$nativeValueToWrite,
 						TrinaryLogic::createYes(),
-						write: $write,
-						supersededMarkerExprs: $write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
+						[],
+						$write,
+						$write !== null ? $nodeScopeResolver->getVariableWriteMarkersToKill($var->name) : [],
 					);
 				} else {
 					if ($var instanceof PropertyFetch || $var instanceof StaticPropertyFetch) {
