@@ -4,6 +4,7 @@ namespace PHPStan\Analyser\StmtHandler;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Return_;
@@ -24,9 +25,11 @@ use PHPStan\Node\InFunctionNode;
 use PHPStan\Node\PropertyAssignNode;
 use PHPStan\Node\ReturnAfterFinallyNode;
 use PHPStan\Node\ReturnStatement;
+use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Reflection\Php\PhpFunctionFromParserNodeReflection;
 use PHPStan\ShouldNotHappenException;
 use function array_merge;
+use function is_string;
 
 /**
  * @implements StmtHandler<Function_>
@@ -142,6 +145,16 @@ final class FunctionHandler implements StmtHandler
 				$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 			});
 			$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
+			$parameterVariables = [];
+			foreach ($stmt->params as $param) {
+				// a by-ref parameter is untracked, and registering it would count
+				// the signature itself as a mention
+				if ($param->byRef || !$param->var instanceof Variable || !is_string($param->var->name)) {
+					continue;
+				}
+				$parameterVariables[] = $param->var;
+			}
+			$functionScope = $nodeScopeResolver->recordVariableImportWrites($parameterVariables, VariableWrite::KIND_PARAMETER, $functionScope);
 			try {
 				$statementResult = $nodeScopeResolver->processStmtNodesInternal($stmt, $stmt->stmts, $functionScope, $bodyStorage, $nodeCallback, StatementContext::createTopLevel($context->shouldResolveTemplateArguments()))->toPublic();
 			} finally {

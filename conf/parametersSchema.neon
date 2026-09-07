@@ -58,6 +58,7 @@ parametersSchema:
 		sortWithoutEffect: bool()
 		unresolvedTemplateArguments: bool()
 		unusedVariable: bool()
+		unusedParameters: bool()
 	])
 	fileExtensions: listOf(string())
 	checkAdvancedIsset: bool()

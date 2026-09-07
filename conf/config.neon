@@ -60,6 +60,7 @@ parameters:
 		sortWithoutEffect: false
 		unresolvedTemplateArguments: false
 		unusedVariable: true
+		unusedParameters: false
 	fileExtensions:
 		- php
 	checkAdvancedIsset: false

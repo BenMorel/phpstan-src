@@ -781,9 +781,10 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 	#[RequiresPhp('>= 8.1.0')]
 	public function testBug7012(): void
 	{
-		// false positive
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-7012.php');
-		$this->assertNoErrors($errors);
+		$this->assertCount(1, $errors);
+		$this->assertSame('Function Bug7012\test() has an unused parameter $f.', $errors[0]->getMessage());
+		$this->assertSame(10, $errors[0]->getLine());
 	}
 
 	#[RequiresPhp('>= 8.1.0')]
@@ -946,9 +947,12 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 
 	public function testBug7153(): void
 	{
-		// false negative
 		$errors = $this->runAnalyse(__DIR__ . '/nsrt/bug-7153.php');
-		$this->assertNoErrors($errors);
+		$this->assertCount(2, $errors);
+		$this->assertSame('Function Bug7153\blih() has an unused parameter $blah.', $errors[0]->getMessage());
+		$this->assertSame(18, $errors[0]->getLine());
+		$this->assertSame('Function Bug7153\blih() has an unused parameter $bleh.', $errors[1]->getMessage());
+		$this->assertSame(18, $errors[1]->getLine());
 	}
 
 	public function testBug7275(): void

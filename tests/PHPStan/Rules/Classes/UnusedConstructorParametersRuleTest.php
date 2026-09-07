@@ -3,6 +3,7 @@
 namespace PHPStan\Rules\Classes;
 
 use PHPStan\Rules\Rule;
+use PHPStan\Rules\UnusedParametersCheck;
 use PHPStan\Testing\RuleTestCase;
 
 /**
@@ -15,7 +16,7 @@ class UnusedConstructorParametersRuleTest extends RuleTestCase
 
 	protected function getRule(): Rule
 	{
-		return new UnusedConstructorParametersRule($this->reportExactLine);
+		return new UnusedConstructorParametersRule(self::getContainer()->getByType(UnusedParametersCheck::class), $this->reportExactLine);
 	}
 
 	public function testUnusedConstructorParametersNoExactLine(): void

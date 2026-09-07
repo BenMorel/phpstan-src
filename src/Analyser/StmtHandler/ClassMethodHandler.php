@@ -224,17 +224,17 @@ final class ClassMethodHandler implements StmtHandler
 					$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 				});
 				$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
-				if ($stmt->name->toLowerString() === '__construct') {
-					$constructorParameterVariables = [];
-					foreach ($stmt->params as $param) {
-						// a promoted parameter is a property - its value is always used
-						if ($param->flags !== 0 || !$param->var instanceof Variable || !is_string($param->var->name)) {
-							continue;
-						}
-						$constructorParameterVariables[] = $param->var;
+				$parameterVariables = [];
+				foreach ($stmt->params as $param) {
+					// a promoted parameter is a property - its value is always used; a
+					// by-ref parameter is untracked, and registering it would count the
+					// signature itself as a mention
+					if ($param->flags !== 0 || $param->byRef || !$param->var instanceof Variable || !is_string($param->var->name)) {
+						continue;
 					}
-					$methodScope = $nodeScopeResolver->recordVariableImportWrites($constructorParameterVariables, VariableWrite::KIND_PARAMETER, $methodScope);
+					$parameterVariables[] = $param->var;
 				}
+				$methodScope = $nodeScopeResolver->recordVariableImportWrites($parameterVariables, VariableWrite::KIND_PARAMETER, $methodScope);
 				try {
 					$statementResult = $nodeScopeResolver->processStmtNodesInternal($stmt, $stmt->stmts, $methodScope, $bodyStorage, $nodeCallback, StatementContext::createTopLevel($context->shouldResolveTemplateArguments()))->toPublic();
 				} finally {
