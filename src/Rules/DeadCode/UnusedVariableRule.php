@@ -8,6 +8,7 @@ use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
+use function in_array;
 use function sprintf;
 use function str_starts_with;
 
@@ -42,6 +43,10 @@ final class UnusedVariableRule implements Rule
 				continue;
 			}
 			if (str_starts_with($name, '_')) {
+				continue;
+			}
+			if (in_array($write->getKind(), [VariableWrite::KIND_PARAMETER, VariableWrite::KIND_CLOSURE_USE], true)) {
+				// reported by UnusedConstructorParametersRule and UnusedClosureUsesRule
 				continue;
 			}
 			if (

@@ -9,10 +9,12 @@ use PHPStan\Node\Variable\VariableWrite;
 
 /**
  * All local-variable write sites of a function-like body, with the set of
- * those whose written value was read on some path afterwards.
+ * those whose written value was read on some path afterwards, and the set of
+ * variable names the body mentions at all.
  *
- * Emitted right after the body's ReturnStatementsNode. Arrow functions have no
- * node of their own - their writes belong to the enclosing function-like.
+ * Emitted right after the body's ReturnStatementsNode, with the scope inside
+ * the function-like. Arrow functions have no node of their own - their writes
+ * belong to the enclosing function-like.
  */
 final class VariableWritesNode extends NodeAbstract implements VirtualNode
 {
@@ -20,17 +22,25 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	/**
 	 * @param list<VariableWrite> $writes
 	 * @param array<int, true> $readWriteIds
+	 * @param array<string, true> $referencedVariableNames
 	 * @param array<string, true> $untrackedVariableNames
 	 */
 	public function __construct(
-		Node\FunctionLike $functionLike,
+		private Node\FunctionLike $functionLike,
 		private array $writes,
 		private array $readWriteIds,
+		private array $referencedVariableNames,
 		private array $untrackedVariableNames,
 		private bool $opaque,
+		private bool $allVariableNamesReferenced,
 	)
 	{
 		parent::__construct($functionLike->getAttributes());
+	}
+
+	public function getFunctionLike(): Node\FunctionLike
+	{
+		return $this->functionLike;
 	}
 
 	/**
@@ -42,11 +52,48 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	}
 
 	/**
+	 * The write whose target is this exact node (a parameter's or closure
+	 * use's variable), if it is tracked.
+	 */
+	public function getWriteForNode(Node\Expr\Variable $variable): ?VariableWrite
+	{
+		foreach ($this->writes as $write) {
+			if ($write->getVariable() === $variable) {
+				return $write;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether a construct that can observe every variable by name without
+	 * reading its current value (func_get_args()) appears in the body.
+	 */
+	public function areAllVariableNamesReferenced(): bool
+	{
+		return $this->allVariableNamesReferenced;
+	}
+
+	/**
 	 * Whether some path from the write reaches a read of the written value.
 	 */
 	public function isRead(VariableWrite $write): bool
 	{
 		return isset($this->readWriteIds[$write->getId()]);
+	}
+
+	/**
+	 * Whether the body mentions the variable at all: a read, a write, a
+	 * statement naming it (global, static, a reference alias), or a construct
+	 * that can observe every variable (eval, include, a dynamic compact() or
+	 * $$name, func_get_args()).
+	 */
+	public function isVariableReferenced(string $variableName): bool
+	{
+		return $this->allVariableNamesReferenced
+			|| $this->opaque
+			|| isset($this->referencedVariableNames[$variableName]);
 	}
 
 	/**

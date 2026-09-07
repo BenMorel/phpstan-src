@@ -22,6 +22,8 @@ final class VariableWrite
 	public const KIND_FOREACH_VALUE = 6;
 	public const KIND_FOREACH_KEY = 7;
 	public const KIND_CATCH = 8;
+	public const KIND_PARAMETER = 9;
+	public const KIND_CLOSURE_USE = 10;
 
 	private VariableWrittenExpr $markerExpr;
 

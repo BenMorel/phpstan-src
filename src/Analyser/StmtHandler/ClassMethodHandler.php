@@ -28,6 +28,7 @@ use PHPStan\Node\MethodReturnStatementsNode;
 use PHPStan\Node\PropertyAssignNode;
 use PHPStan\Node\ReturnAfterFinallyNode;
 use PHPStan\Node\ReturnStatement;
+use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Reflection\Php\PhpMethodFromParserNodeReflection;
 use PHPStan\ShouldNotHappenException;
 use PHPStan\Type\MixedType;
@@ -223,6 +224,17 @@ final class ClassMethodHandler implements StmtHandler
 					$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 				});
 				$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
+				if ($stmt->name->toLowerString() === '__construct') {
+					$constructorParameterVariables = [];
+					foreach ($stmt->params as $param) {
+						// a promoted parameter is a property - its value is always used
+						if ($param->flags !== 0 || !$param->var instanceof Variable || !is_string($param->var->name)) {
+							continue;
+						}
+						$constructorParameterVariables[] = $param->var;
+					}
+					$methodScope = $nodeScopeResolver->recordVariableImportWrites($constructorParameterVariables, VariableWrite::KIND_PARAMETER, $methodScope);
+				}
 				try {
 					$statementResult = $nodeScopeResolver->processStmtNodesInternal($stmt, $stmt->stmts, $methodScope, $bodyStorage, $nodeCallback, StatementContext::createTopLevel($context->shouldResolveTemplateArguments()))->toPublic();
 				} finally {

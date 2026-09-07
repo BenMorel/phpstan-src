@@ -1818,6 +1818,22 @@ class NodeScopeResolver
 	 * @param callable(Node $node, Scope $scope): void $nodeCallback
 	 */
 	/**
+	 * @return list<Variable>
+	 */
+	private function getByValueClosureUseVariables(Expr\Closure $expr): array
+	{
+		$variables = [];
+		foreach ($expr->uses as $use) {
+			if ($use->byRef || !is_string($use->var->name)) {
+				continue;
+			}
+			$variables[] = $use->var;
+		}
+
+		return $variables;
+	}
+
+	/**
 	 * Opens the write-tracking frame of a function-like body. By-ref parameters
 	 * and by-ref closure uses alias slots outside the body, so their writes are
 	 * never reported.
@@ -1894,7 +1910,11 @@ class NodeScopeResolver
 		if ($frame === null || $this->isProcessingOnDemand()) {
 			return null;
 		}
-		$newFrame = $frame->withWrite($variable, $kind, ++$this->variableWriteIdCounter);
+		$newFrame = $frame;
+		if (is_string($variable->name)) {
+			$newFrame = $newFrame->withReferenced($variable->name);
+		}
+		$newFrame = $newFrame->withWrite($variable, $kind, ++$this->variableWriteIdCounter);
 		if ($newFrame !== $frame) {
 			$this->replaceVariableWritesFrame($newFrame);
 		}
@@ -1952,6 +1972,50 @@ class NodeScopeResolver
 	}
 
 	/**
+	 * A construct that can observe every variable by name without reading its
+	 * current value (func_get_args()).
+	 */
+	public function markAllVariableNamesReferenced(): void
+	{
+		$frame = $this->getVariableWritesFrame();
+		if ($frame === null || $this->isProcessingOnDemand()) {
+			return;
+		}
+		$newFrame = $frame->withAllNamesReferenced();
+		if ($newFrame === $frame) {
+			return;
+		}
+		$this->replaceVariableWritesFrame($newFrame);
+	}
+
+	/**
+	 * Registers the initial write of each variable imported into the
+	 * function-like (a constructor parameter, a by-value closure use) and
+	 * plants its marker on the body's entry scope, so the unused-parameter
+	 * rules can tell whether the incoming value is ever read. Untracked
+	 * imports (by-ref) register nothing.
+	 *
+	 * @param list<Variable> $variables
+	 * @param VariableWrite::KIND_PARAMETER|VariableWrite::KIND_CLOSURE_USE $kind
+	 */
+	public function recordVariableImportWrites(array $variables, int $kind, MutatingScope $scope): MutatingScope
+	{
+		$markerExprs = [];
+		foreach ($variables as $variable) {
+			$write = $this->recordVariableWrite($variable, $kind);
+			if ($write === null) {
+				continue;
+			}
+			$markerExprs[] = $write->getMarkerExpr();
+		}
+		if (count($markerExprs) === 0) {
+			return $scope;
+		}
+
+		return $scope->withVariableWriteMarkers($markerExprs);
+	}
+
+	/**
 	 * The variable's writes escape the body (global, static, reference alias):
 	 * none of them is ever reported.
 	 */
@@ -1961,7 +2025,7 @@ class NodeScopeResolver
 		if ($frame === null) {
 			return;
 		}
-		$newFrame = $frame->withUntracked($variableName);
+		$newFrame = $frame->withReferenced($variableName)->withUntracked($variableName);
 		if ($newFrame === $frame) {
 			return;
 		}
@@ -2247,6 +2311,7 @@ class NodeScopeResolver
 		// a write site is identified by its node, so every pass maps onto the
 		// same writes and the read set only grows
 		$this->pushVariableWritesFrame($expr->params, $byRefUses);
+		$closureScope = $this->recordVariableImportWrites($this->getByValueClosureUseVariables($expr), VariableWrite::KIND_CLOSURE_USE, $closureScope);
 		if (count($byRefUses) === 0) {
 			$this->pushNodeGatherer($closureStmtsGatherer);
 			try {
@@ -2318,6 +2383,7 @@ class NodeScopeResolver
 
 			$closureScope = $scope->enterAnonymousFunction($expr, $callableParameters, $nativeCallableParameters);
 			$closureScope = $closureScope->processClosureScope($intermediaryClosureScope, $prevScope, $byRefUses);
+			$closureScope = $this->recordVariableImportWrites($this->getByValueClosureUseVariables($expr), VariableWrite::KIND_CLOSURE_USE, $closureScope);
 
 			if ($closureScope->equals($prevScope)) {
 				break;

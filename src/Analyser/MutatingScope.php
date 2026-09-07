@@ -3281,6 +3281,33 @@ class MutatingScope implements Scope, NodeCallbackInvoker, CollectedDataEmitter
 	}
 
 	/**
+	 * Plants the markers of a function-like's imported variables (constructor
+	 * parameters, by-value closure uses) at the start of its body, so the
+	 * unused-parameter rules can tell whether the incoming value is ever
+	 * read - see assignVariable().
+	 *
+	 * @param list<Expr> $markerExprs
+	 */
+	public function withVariableWriteMarkers(array $markerExprs): self
+	{
+		$expressionTypes = $this->expressionTypes;
+		foreach ($markerExprs as $markerExpr) {
+			$expressionTypes[$this->getNodeKey($markerExpr)] = ExpressionTypeHolder::createYes($markerExpr, new MixedType());
+		}
+
+		return $this->duplicateWith(
+			$expressionTypes,
+			$this->nativeExpressionTypes,
+			$this->conditionalExpressions,
+			$this->currentlyAssignedExpressions,
+			$this->currentlyAllowedUndefinedExpressions,
+			$this->inFunctionCallsStack,
+			$this->inFirstLevelStatement,
+			$this->afterExtractCall,
+		);
+	}
+
+	/**
 	 * A write site ($write) plants its VariableWrittenExpr marker and kills the
 	 * markers of the variable's earlier write sites ($supersededMarkerExprs) -
 	 * the scope is told what to kill, it never consults engine state. Writes

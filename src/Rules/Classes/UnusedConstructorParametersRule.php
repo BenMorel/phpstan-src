@@ -4,52 +4,61 @@ namespace PHPStan\Rules\Classes;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Param;
 use PHPStan\Analyser\Scope;
+use PHPStan\DependencyInjection\AutowiredParameter;
 use PHPStan\DependencyInjection\RegisteredRule;
 use PHPStan\Internal\SprintfHelper;
-use PHPStan\Node\InClassMethodNode;
+use PHPStan\Node\VariableWritesNode;
 use PHPStan\Rules\Rule;
-use PHPStan\Rules\UnusedFunctionParametersCheck;
-use PHPStan\ShouldNotHappenException;
-use function array_filter;
-use function array_map;
-use function array_values;
+use PHPStan\Rules\RuleErrorBuilder;
 use function count;
+use function is_string;
 use function sprintf;
 
 /**
- * @implements Rule<InClassMethodNode>
+ * @implements Rule<VariableWritesNode>
  */
 #[RegisteredRule(level: 1)]
 final class UnusedConstructorParametersRule implements Rule
 {
 
-	public function __construct(private UnusedFunctionParametersCheck $check)
+	public function __construct(
+		#[AutowiredParameter(ref: '%featureToggles.reportPreciseLineForUnusedFunctionParameter%')]
+		private bool $reportExactLine,
+	)
 	{
 	}
 
 	public function getNodeType(): string
 	{
-		return InClassMethodNode::class;
+		return VariableWritesNode::class;
 	}
 
 	public function processNode(Node $node, Scope $scope): array
 	{
-		$method = $node->getMethodReflection();
-		$originalNode = $node->getOriginalNode();
-		if (!$method->isConstructor() || $originalNode->stmts === null) {
+		$originalNode = $node->getFunctionLike();
+		if (!$originalNode instanceof Node\Stmt\ClassMethod) {
 			return [];
 		}
-
+		if ($originalNode->name->toLowerString() !== '__construct' || $originalNode->stmts === null) {
+			return [];
+		}
 		if (count($originalNode->params) === 0) {
 			return [];
 		}
-		if ($node->getClassReflection()->isAttributeClass()) {
+		if ($node->isOpaque()) {
+			return [];
+		}
+		if (!$scope->isInClass()) {
 			return [];
 		}
 
-		foreach ($node->getClassReflection()->getInterfaces() as $interface) {
+		$classReflection = $scope->getClassReflection();
+		if ($classReflection->isAttributeClass()) {
+			return [];
+		}
+
+		foreach ($classReflection->getInterfaces() as $interface) {
 			if ($interface->hasConstructor()) {
 				return [];
 			}
@@ -57,24 +66,42 @@ final class UnusedConstructorParametersRule implements Rule
 
 		$message = sprintf(
 			'Constructor of class %s has an unused parameter $%%s.',
-			SprintfHelper::escapeFormatString($node->getClassReflection()->getDisplayName()),
+			SprintfHelper::escapeFormatString($classReflection->getDisplayName()),
 		);
-		if ($node->getClassReflection()->isAnonymous()) {
+		if ($classReflection->isAnonymous()) {
 			$message = 'Constructor of an anonymous class has an unused parameter $%s.';
 		}
 
-		return $this->check->getUnusedParameters(
-			$scope,
-			array_map(static function (Param $parameter): Variable {
-				if (!$parameter->var instanceof Variable) {
-					throw new ShouldNotHappenException();
+		$errors = [];
+		foreach ($originalNode->params as $parameter) {
+			if ($parameter->flags !== 0) {
+				continue;
+			}
+			if (!$parameter->var instanceof Variable || !is_string($parameter->var->name)) {
+				continue;
+			}
+			$write = $node->getWriteForNode($parameter->var);
+			if ($write !== null) {
+				// the parameter binds a value - it is unused unless that value
+				// is read on some path (overwriting it first is not a use);
+				// func_get_args() observes the original values of all parameters
+				if ($node->isRead($write) || $node->areAllVariableNamesReferenced()) {
+					continue;
 				}
-				return $parameter->var;
-			}, array_values(array_filter($originalNode->params, static fn (Param $parameter): bool => $parameter->flags === 0))),
-			$originalNode->stmts,
-			$message,
-			'constructor.unusedParameter',
-		);
+			} elseif ($node->isVariableReferenced($parameter->var->name)) {
+				// a by-ref parameter gives the caller the variable - any mention counts
+				continue;
+			}
+
+			$errorBuilder = RuleErrorBuilder::message(sprintf($message, $parameter->var->name))
+				->identifier('constructor.unusedParameter');
+			if ($this->reportExactLine) {
+				$errorBuilder->line($parameter->var->getStartLine());
+			}
+			$errors[] = $errorBuilder->build();
+		}
+
+		return $errors;
 	}
 
 }
