@@ -314,7 +314,7 @@ final class FuncCallScopeEffectsHelper
 				}
 			} elseif (in_array($functionReflection->getName(), ['get_defined_vars', 'extract'], true)) {
 				$nodeScopeResolver->markAllReachingVariablesRead($scope);
-			} elseif ($functionReflection->getName() === 'func_get_args') {
+			} elseif (in_array($functionReflection->getName(), ['func_get_args', 'func_get_arg'], true)) {
 				// observes every parameter's original value by name; the
 				// variables' current values are not read
 				$nodeScopeResolver->markAllVariableNamesReferenced();
