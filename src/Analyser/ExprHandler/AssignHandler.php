@@ -1241,7 +1241,7 @@ final class AssignHandler implements ExprHandler
 				$write = $target->getWriteSiteKind() !== null ? $nodeScopeResolver->recordVariableWrite($var, $target->getWriteSiteKind()) : null;
 				$nativeType = $this->readAssignedValueType($nodeScopeResolver, $storedAssignedExprResult, $assignedExpr, $scope->doNotTreatPhpDocTypesAsCertain());
 				if ($write !== null && $write->getKind() === VariableWrite::KIND_ASSIGN) {
-					$nodeScopeResolver->markVariableWriteRedundancy($write, $this->isRedundantAssignment($scope, $var->name, $type, $nativeType));
+					$nodeScopeResolver->markVariableWriteRedundancy($write, $this->getRedundantAssignmentType($scope, $var->name, $type, $nativeType));
 				}
 				$scope = $scope->assignVariable(
 					$var->name,
@@ -2135,27 +2135,30 @@ final class AssignHandler implements ExprHandler
 	}
 
 	/**
-	 * Whether the assignment stores the value the variable provably already
-	 * has: its current type allows exactly one value and the assigned type
-	 * equals it. Required in the native flavour too, so a phpDoc-only
-	 * certainty never reports on its own.
+	 * The assigned type when the assignment stores the value the variable
+	 * provably already has: its current type allows exactly one value and the
+	 * assigned type equals it. Required in the native flavour too, so a
+	 * phpDoc-only certainty never reports on its own. Null otherwise.
 	 */
-	private function isRedundantAssignment(MutatingScope $scope, string $variableName, Type $type, Type $nativeType): bool
+	private function getRedundantAssignmentType(MutatingScope $scope, string $variableName, Type $type, Type $nativeType): ?Type
 	{
 		if (!$scope->hasVariableType($variableName)->yes()) {
-			return false;
+			return null;
 		}
 		$finiteTypes = $scope->getVariableType($variableName)->getFiniteTypes();
 		if (count($finiteTypes) !== 1 || !$finiteTypes[0]->equals($type)) {
-			return false;
+			return null;
 		}
 		$nativeScope = $scope->doNotTreatPhpDocTypesAsCertain();
 		if (!$nativeScope->hasVariableType($variableName)->yes()) {
-			return false;
+			return null;
 		}
 		$nativeFiniteTypes = $nativeScope->getVariableType($variableName)->getFiniteTypes();
+		if (count($nativeFiniteTypes) !== 1 || !$nativeFiniteTypes[0]->equals($nativeType)) {
+			return null;
+		}
 
-		return count($nativeFiniteTypes) === 1 && $nativeFiniteTypes[0]->equals($nativeType);
+		return $type;
 	}
 
 	/**

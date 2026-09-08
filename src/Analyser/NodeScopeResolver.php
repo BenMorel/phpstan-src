@@ -2012,16 +2012,17 @@ class NodeScopeResolver
 	}
 
 	/**
-	 * Whether the write assigns the value the variable provably already has -
-	 * computed by AssignHandler at the write site.
+	 * The type of the assigned value when the write assigns the value the
+	 * variable provably already has (null otherwise) - computed by
+	 * AssignHandler at the write site.
 	 */
-	public function markVariableWriteRedundancy(VariableWrite $write, bool $redundant): void
+	public function markVariableWriteRedundancy(VariableWrite $write, ?Type $redundantType): void
 	{
 		$frame = $this->getVariableWritesFrame();
 		if ($frame === null) {
 			return;
 		}
-		$newFrame = $frame->withRedundancy($write, $redundant);
+		$newFrame = $frame->withRedundancy($write, $redundantType);
 		if ($newFrame === $frame) {
 			return;
 		}

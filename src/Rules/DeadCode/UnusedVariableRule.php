@@ -8,6 +8,7 @@ use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\Type\VerbosityLevel;
 use function in_array;
 use function sprintf;
 use function str_starts_with;
@@ -61,11 +62,16 @@ final class UnusedVariableRule implements Rule
 				continue;
 			}
 
-			if (!$node->isRedundant($write)) {
+			$redundantType = $node->getRedundantType($write);
+			if ($redundantType === null) {
 				continue;
 			}
 
-			$errors[] = RuleErrorBuilder::message(sprintf('Variable $%s is assigned the value it already has.', $name))
+			$errors[] = RuleErrorBuilder::message(sprintf(
+				'Variable $%s is assigned value %s but it already has that value.',
+				$name,
+				$redundantType->describe(VerbosityLevel::value()),
+			))
 				->identifier('variable.redundantAssignment')
 				->line($write->getVariable()->getStartLine())
 				->build();

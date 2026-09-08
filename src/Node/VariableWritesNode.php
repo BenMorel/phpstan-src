@@ -6,6 +6,7 @@ use Override;
 use PhpParser\Node;
 use PhpParser\NodeAbstract;
 use PHPStan\Node\Variable\VariableWrite;
+use PHPStan\Type\Type;
 
 /**
  * All local-variable write sites of a function-like body, with the set of
@@ -22,7 +23,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	/**
 	 * @param list<VariableWrite> $writes
 	 * @param array<int, true> $readWriteIds
-	 * @param array<int, true> $redundantWriteIds
+	 * @param array<int, Type> $redundantWriteTypes
 	 * @param array<string, true> $referencedVariableNames
 	 * @param array<string, true> $untrackedVariableNames
 	 */
@@ -30,7 +31,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 		private Node\FunctionLike $functionLike,
 		private array $writes,
 		private array $readWriteIds,
-		private array $redundantWriteIds,
+		private array $redundantWriteTypes,
 		private array $referencedVariableNames,
 		private array $untrackedVariableNames,
 		private bool $opaque,
@@ -86,11 +87,12 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	}
 
 	/**
-	 * Whether the write assigns the value the variable provably already has.
+	 * The type of the assigned value when the write assigns the value the
+	 * variable provably already has, null otherwise.
 	 */
-	public function isRedundant(VariableWrite $write): bool
+	public function getRedundantType(VariableWrite $write): ?Type
 	{
-		return isset($this->redundantWriteIds[$write->getId()]);
+		return $this->redundantWriteTypes[$write->getId()] ?? null;
 	}
 
 	/**

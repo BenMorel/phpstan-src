@@ -6,6 +6,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
+use PHPStan\Type\Type;
 use function array_keys;
 use function array_values;
 use function in_array;
@@ -33,7 +34,7 @@ final class VariableWritesFrame
 	 * @param array<int, int> $idsByNode spl_object_id(target node) => id
 	 * @param array<string, list<int>> $idsByName
 	 * @param array<int, true> $readIds
-	 * @param array<int, true> $redundantIds
+	 * @param array<int, Type> $redundantTypes id => the re-assigned value's type
 	 * @param array<string, true> $referencedNames
 	 * @param array<string, true> $untrackedNames
 	 */
@@ -42,7 +43,7 @@ final class VariableWritesFrame
 		private array $idsByNode,
 		private array $idsByName,
 		private array $readIds,
-		private array $redundantIds,
+		private array $redundantTypes,
 		private array $referencedNames,
 		private array $untrackedNames,
 		private bool $opaque,
@@ -73,7 +74,7 @@ final class VariableWritesFrame
 		$referencedNames = $this->referencedNames;
 		$referencedNames[$name] = true;
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantTypes, $referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -86,7 +87,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, true, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, true, $this->returnsByReference);
 	}
 
 	/**
@@ -117,7 +118,7 @@ final class VariableWritesFrame
 		$idsByName = $this->idsByName;
 		$idsByName[$name][] = $id;
 
-		return new self($writes, $idsByNode, $idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($writes, $idsByNode, $idsByName, $this->readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	public function getWrite(Expr\Variable $variable): ?VariableWrite
@@ -199,7 +200,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -207,20 +208,23 @@ final class VariableWritesFrame
 	 * AssignHandler. Re-evaluated on every convergence pass of a loop or a
 	 * closure; the last pass, walked on the converged scope, wins.
 	 */
-	public function withRedundancy(VariableWrite $write, bool $redundant): self
+	public function withRedundancy(VariableWrite $write, ?Type $redundantType): self
 	{
 		$id = $write->getId();
-		if ($redundant === isset($this->redundantIds[$id])) {
-			return $this;
-		}
-		$redundantIds = $this->redundantIds;
-		if ($redundant) {
-			$redundantIds[$id] = true;
+		$redundantTypes = $this->redundantTypes;
+		if ($redundantType === null) {
+			if (!isset($redundantTypes[$id])) {
+				return $this;
+			}
+			unset($redundantTypes[$id]);
 		} else {
-			unset($redundantIds[$id]);
+			if (isset($redundantTypes[$id]) && $redundantTypes[$id]->equals($redundantType)) {
+				return $this;
+			}
+			$redundantTypes[$id] = $redundantType;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -245,7 +249,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	public function withUntracked(string $name): self
@@ -256,7 +260,7 @@ final class VariableWritesFrame
 		$untrackedNames = $this->untrackedNames;
 		$untrackedNames[$name] = true;
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantTypes, $this->referencedNames, $untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -274,7 +278,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, true, $this->allNamesReferenced, $this->returnsByReference);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, true, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -287,7 +291,7 @@ final class VariableWritesFrame
 
 	public function createNode(Node\FunctionLike $functionLike): VariableWritesNode
 	{
-		return new VariableWritesNode($functionLike, $this->getWrites(), $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new VariableWritesNode($functionLike, $this->getWrites(), $this->readIds, $this->redundantTypes, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
 	}
 
 }

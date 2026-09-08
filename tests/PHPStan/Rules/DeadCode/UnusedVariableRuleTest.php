@@ -255,7 +255,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/unused-variable-redundant.php'], [
 			[
-				'Variable $x is assigned the value it already has.',
+				'Variable $x is assigned value true but it already has that value.',
 				26,
 			],
 			[
@@ -263,19 +263,19 @@ class UnusedVariableRuleTest extends RuleTestCase
 				42,
 			],
 			[
-				'Variable $x is assigned the value it already has.',
+				'Variable $x is assigned value 1 but it already has that value.',
 				43,
 			],
 			[
-				'Variable $x is assigned the value it already has.',
+				'Variable $x is assigned value null but it already has that value.',
 				51,
 			],
 			[
-				'Variable $s is assigned the value it already has.',
+				'Variable $s is assigned value \'a\' but it already has that value.',
 				60,
 			],
 			[
-				'Variable $a is assigned the value it already has.',
+				'Variable $a is assigned value array{k: 1} but it already has that value.',
 				69,
 			],
 			[
@@ -283,7 +283,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				95,
 			],
 			[
-				'Variable $x is assigned the value it already has.',
+				'Variable $x is assigned value 1 but it already has that value.',
 				118,
 			],
 		]);
