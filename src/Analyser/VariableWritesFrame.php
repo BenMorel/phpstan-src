@@ -46,13 +46,14 @@ final class VariableWritesFrame
 		private array $untrackedNames,
 		private bool $opaque,
 		private bool $allNamesReferenced,
+		private bool $returnsByReference,
 	)
 	{
 	}
 
-	public static function create(): self
+	public static function create(bool $returnsByReference): self
 	{
-		return new self([], [], [], [], [], [], [], false, false);
+		return new self([], [], [], [], [], [], [], false, false, $returnsByReference);
 	}
 
 	/**
@@ -71,7 +72,7 @@ final class VariableWritesFrame
 		$referencedNames = $this->referencedNames;
 		$referencedNames[$name] = true;
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -84,7 +85,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, true);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, true, $this->returnsByReference);
 	}
 
 	/**
@@ -115,7 +116,7 @@ final class VariableWritesFrame
 		$idsByName = $this->idsByName;
 		$idsByName[$name][] = $id;
 
-		return new self($writes, $idsByNode, $idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new self($writes, $idsByNode, $idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	public function getWrite(Expr\Variable $variable): ?VariableWrite
@@ -197,7 +198,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**
@@ -218,7 +219,7 @@ final class VariableWritesFrame
 			unset($redundantIds[$id]);
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	public function withUntracked(string $name): self
@@ -229,7 +230,16 @@ final class VariableWritesFrame
 		$untrackedNames = $this->untrackedNames;
 		$untrackedNames[$name] = true;
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $untrackedNames, $this->opaque, $this->allNamesReferenced);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+	}
+
+	/**
+	 * Whether the function-like returns by reference - a returned variable is
+	 * then aliased to the caller.
+	 */
+	public function returnsByReference(): bool
+	{
+		return $this->returnsByReference;
 	}
 
 	public function withOpaque(): self
@@ -238,7 +248,7 @@ final class VariableWritesFrame
 			return $this;
 		}
 
-		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, true, $this->allNamesReferenced);
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, true, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	/**

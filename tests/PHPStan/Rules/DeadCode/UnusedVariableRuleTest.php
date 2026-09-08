@@ -289,4 +289,22 @@ class UnusedVariableRuleTest extends RuleTestCase
 		]);
 	}
 
+	public function testByRefReturn(): void
+	{
+		$this->analyse([__DIR__ . '/data/unused-variable-by-ref-return.php'], [
+			[
+				'Value assigned to variable $x is never read.',
+				26,
+			],
+			[
+				'Value assigned to variable $unused is never read.',
+				32,
+			],
+			[
+				'Value assigned to variable $x is never read.',
+				68,
+			],
+		]);
+	}
+
 }

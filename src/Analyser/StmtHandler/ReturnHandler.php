@@ -2,6 +2,7 @@
 
 namespace PHPStan\Analyser\StmtHandler;
 
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Return_;
 use PHPStan\Analyser\ExpressionContext;
@@ -13,6 +14,7 @@ use PHPStan\Analyser\NodeScopeResolver;
 use PHPStan\Analyser\StatementContext;
 use PHPStan\Analyser\StmtHandler;
 use PHPStan\DependencyInjection\AutowiredService;
+use function is_string;
 
 /**
  * @implements StmtHandler<Return_>
@@ -47,6 +49,15 @@ final class ReturnHandler implements StmtHandler
 			$impurePoints = $result->getImpurePoints();
 			$scope = $result->getScope()->addTemplateArgumentConstraints($varConstraints)->addTemplateArgumentConstraints($nodeScopeResolver->collectReturnSend($stmtScope, $result));
 			$hasYield = $result->hasYield();
+			if (
+				$stmt->expr instanceof Variable
+				&& is_string($stmt->expr->name)
+				&& $nodeScopeResolver->currentFunctionLikeReturnsByReference()
+			) {
+				// the returned variable is aliased to the caller - a write after
+				// this return statement (a finally block) is observable
+				$nodeScopeResolver->markVariableUntracked($stmt->expr->name);
+			}
 		} else {
 			$hasYield = false;
 			$throwPoints = [];

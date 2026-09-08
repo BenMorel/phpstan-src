@@ -1851,9 +1851,9 @@ class NodeScopeResolver
 	 * @param Node\Param[] $params
 	 * @param Node\ClosureUse[] $byRefUses
 	 */
-	public function pushVariableWritesFrame(array $params, array $byRefUses = []): void
+	public function pushVariableWritesFrame(array $params, array $byRefUses = [], bool $returnsByReference = false): void
 	{
-		$frame = VariableWritesFrame::create();
+		$frame = VariableWritesFrame::create($returnsByReference);
 		foreach ($params as $param) {
 			if (!$param->byRef || !$param->var instanceof Variable || !is_string($param->var->name)) {
 				continue;
@@ -2040,6 +2040,18 @@ class NodeScopeResolver
 		}
 
 		return $scope->withVariableWriteMarkers($markerExprs);
+	}
+
+	/**
+	 * Whether the function-like being walked returns by reference: a returned
+	 * variable is aliased to the caller, so writes after the return statement
+	 * (a finally block) are observable.
+	 */
+	public function currentFunctionLikeReturnsByReference(): bool
+	{
+		$frame = $this->getVariableWritesFrame();
+
+		return $frame !== null && $frame->returnsByReference();
 	}
 
 	/**
@@ -2337,7 +2349,7 @@ class NodeScopeResolver
 		// one frame across the by-ref convergence passes and the final walk:
 		// a write site is identified by its node, so every pass maps onto the
 		// same writes and the read set only grows
-		$this->pushVariableWritesFrame($expr->params, $byRefUses);
+		$this->pushVariableWritesFrame($expr->params, $byRefUses, $expr->byRef);
 		$closureScope = $this->recordVariableImportWrites($this->getByValueClosureUseVariables($expr), VariableWrite::KIND_CLOSURE_USE, $closureScope);
 		if (count($byRefUses) === 0) {
 			$this->pushNodeGatherer($closureStmtsGatherer);

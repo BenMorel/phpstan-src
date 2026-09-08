@@ -223,7 +223,7 @@ final class ClassMethodHandler implements StmtHandler
 
 					$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 				});
-				$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
+				$nodeScopeResolver->pushVariableWritesFrame($stmt->params, [], $stmt->byRef);
 				$parameterVariables = [];
 				foreach ($stmt->params as $param) {
 					// a promoted parameter is a property - its value is always used; a

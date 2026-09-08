@@ -146,7 +146,7 @@ final class PropertyHooksProcessor
 
 				$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 			});
-			$nodeScopeResolver->pushVariableWritesFrame($hook->params);
+			$nodeScopeResolver->pushVariableWritesFrame($hook->params, [], $hook->byRef);
 			try {
 				$statementResult = $nodeScopeResolver->processStmtNodesInternal(new PropertyHookStatementNode($hook), $stmts, $hookScope, $storage, $nodeCallback, StatementContext::createTopLevel())->toPublic();
 			} finally {

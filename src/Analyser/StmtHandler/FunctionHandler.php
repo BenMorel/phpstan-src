@@ -144,7 +144,7 @@ final class FunctionHandler implements StmtHandler
 
 				$gatheredReturnStatements[] = new ReturnStatement($scope, $node);
 			});
-			$nodeScopeResolver->pushVariableWritesFrame($stmt->params);
+			$nodeScopeResolver->pushVariableWritesFrame($stmt->params, [], $stmt->byRef);
 			$parameterVariables = [];
 			foreach ($stmt->params as $param) {
 				// a by-ref parameter is untracked, and registering it would count
