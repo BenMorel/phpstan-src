@@ -8,6 +8,7 @@ use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\ShouldNotHappenException;
 use PHPStan\Type\VerbosityLevel;
 use function in_array;
 use function sprintf;
@@ -55,7 +56,7 @@ final class UnusedVariableRule implements Rule
 			}
 
 			if (!$node->isRead($write)) {
-				$errors[] = RuleErrorBuilder::message(sprintf('Value assigned to variable $%s is never read.', $name))
+				$errors[] = RuleErrorBuilder::message($this->getMessage($write->getKind(), $name))
 					->identifier('variable.unused')
 					->line($write->getVariable()->getStartLine())
 					->build();
@@ -78,6 +79,19 @@ final class UnusedVariableRule implements Rule
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * @param VariableWrite::KIND_* $kind
+	 */
+	private function getMessage(int $kind, string $variableName): string
+	{
+		switch ($kind) {
+			case VariableWrite::KIND_ASSIGN:
+				return sprintf('Value assigned to variable $%s is never read.', $variableName);
+		}
+
+		throw new ShouldNotHappenException(sprintf('Unhandled variable write kind %d', $kind));
 	}
 
 }
