@@ -6,6 +6,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PHPStan\Node\Variable\VariableWrite;
 use PHPStan\Node\VariableWritesNode;
+use function array_keys;
 use function array_values;
 use function in_array;
 use function is_string;
@@ -220,6 +221,31 @@ final class VariableWritesFrame
 		}
 
 		return new self($this->writes, $this->idsByNode, $this->idsByName, $this->readIds, $redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
+	}
+
+	/**
+	 * Marks every write registered after the given watermark as read: they were
+	 * registered while walking a branch whose condition is statically decided
+	 * against it, so they never execute and are not dead stores - the deadness
+	 * itself is what the always-true/false rules report.
+	 */
+	public function withWritesAfterWatermarkRead(int $watermark): self
+	{
+		$readIds = null;
+		foreach (array_keys($this->writes) as $id) {
+			if ($id <= $watermark || isset($this->readIds[$id])) {
+				continue;
+			}
+			if ($readIds === null) {
+				$readIds = $this->readIds;
+			}
+			$readIds[$id] = true;
+		}
+		if ($readIds === null) {
+			return $this;
+		}
+
+		return new self($this->writes, $this->idsByNode, $this->idsByName, $readIds, $this->redundantIds, $this->referencedNames, $this->untrackedNames, $this->opaque, $this->allNamesReferenced, $this->returnsByReference);
 	}
 
 	public function withUntracked(string $name): self

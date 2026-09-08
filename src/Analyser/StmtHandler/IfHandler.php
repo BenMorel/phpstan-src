@@ -50,8 +50,12 @@ final class IfHandler implements StmtHandler
 		$alwaysTerminating = true;
 		$hasYield = $condResult->hasYield();
 
+		$branchWatermark = $nodeScopeResolver->getVariableWritesWatermark();
 		$branchScopeStatementResult = $nodeScopeResolver->processStmtNodesInternal($stmt, $stmt->stmts, $condResult->getTruthyScope(), $storage, $nodeCallback, $context);
 
+		if ($conditionType->isTrue()->no()) {
+			$nodeScopeResolver->markVariableWritesAfterWatermarkRead($branchWatermark);
+		}
 		if (!$conditionType->isTrue()->no()) {
 			$exitPoints = $branchScopeStatementResult->getExitPoints();
 			$throwPoints = array_merge($throwPoints, $branchScopeStatementResult->getThrowPoints());
@@ -79,8 +83,12 @@ final class IfHandler implements StmtHandler
 			$elseIfConditionType = ($nodeScopeResolver->shouldTreatPhpDocTypesAsCertain() ? $condResult->getType() : $condResult->getNativeType())->toBoolean();
 			$throwPoints = array_merge($throwPoints, $condResult->getThrowPoints());
 			$impurePoints = array_merge($impurePoints, $condResult->getImpurePoints());
+			$branchWatermark = $nodeScopeResolver->getVariableWritesWatermark();
 			$branchScopeStatementResult = $nodeScopeResolver->processStmtNodesInternal($elseif, $elseif->stmts, $condResult->getTruthyScope(), $storage, $nodeCallback, $context);
 
+			if ($ifAlwaysTrue || $lastElseIfConditionIsTrue || $elseIfConditionType->isTrue()->no()) {
+				$nodeScopeResolver->markVariableWritesAfterWatermarkRead($branchWatermark);
+			}
 			if (
 				!$ifAlwaysTrue
 				&& !$lastElseIfConditionIsTrue
@@ -119,8 +127,12 @@ final class IfHandler implements StmtHandler
 			}
 		} else {
 			$nodeScopeResolver->callNodeCallback($nodeCallback, $stmt->else, $scope, $storage);
+			$branchWatermark = $nodeScopeResolver->getVariableWritesWatermark();
 			$branchScopeStatementResult = $nodeScopeResolver->processStmtNodesInternal($stmt->else, $stmt->else->stmts, $scope, $storage, $nodeCallback, $context);
 
+			if ($ifAlwaysTrue || $lastElseIfConditionIsTrue) {
+				$nodeScopeResolver->markVariableWritesAfterWatermarkRead($branchWatermark);
+			}
 			if (!$ifAlwaysTrue && !$lastElseIfConditionIsTrue) {
 				$exitPoints = array_merge($exitPoints, $branchScopeStatementResult->getExitPoints());
 				$throwPoints = array_merge($throwPoints, $branchScopeStatementResult->getThrowPoints());

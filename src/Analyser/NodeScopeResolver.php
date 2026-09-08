@@ -1982,6 +1982,36 @@ class NodeScopeResolver
 	}
 
 	/**
+	 * The current position in the write-site id sequence - taken before walking
+	 * a branch, so a statically dead branch's writes can be suppressed after.
+	 */
+	public function getVariableWritesWatermark(): int
+	{
+		return $this->variableWriteIdCounter;
+	}
+
+	/**
+	 * The branch walked since the watermark is statically dead - its condition
+	 * is decided against it - so its writes never execute and are not dead
+	 * stores; the deadness itself is what the always-true/false rules report.
+	 * A write first registered by an earlier pass of an enclosing loop keeps
+	 * its id, so a branch that only becomes decided on a later pass keeps its
+	 * reports.
+	 */
+	public function markVariableWritesAfterWatermarkRead(int $watermark): void
+	{
+		$frame = $this->getVariableWritesFrame();
+		if ($frame === null) {
+			return;
+		}
+		$newFrame = $frame->withWritesAfterWatermarkRead($watermark);
+		if ($newFrame === $frame) {
+			return;
+		}
+		$this->replaceVariableWritesFrame($newFrame);
+	}
+
+	/**
 	 * Whether the write assigns the value the variable provably already has -
 	 * computed by AssignHandler at the write site.
 	 */
