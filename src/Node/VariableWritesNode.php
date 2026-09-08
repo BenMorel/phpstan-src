@@ -23,6 +23,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	/**
 	 * @param list<VariableWrite> $writes
 	 * @param array<int, true> $readWriteIds
+	 * @param array<string, true> $readVariableNames
 	 * @param array<int, Type> $redundantWriteTypes
 	 * @param array<string, true> $referencedVariableNames
 	 * @param array<string, true> $untrackedVariableNames
@@ -31,6 +32,7 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 		private Node\FunctionLike $functionLike,
 		private array $writes,
 		private array $readWriteIds,
+		private array $readVariableNames,
 		private array $redundantWriteTypes,
 		private array $referencedVariableNames,
 		private array $untrackedVariableNames,
@@ -84,6 +86,15 @@ final class VariableWritesNode extends NodeAbstract implements VirtualNode
 	public function isRead(VariableWrite $write): bool
 	{
 		return isset($this->readWriteIds[$write->getId()]);
+	}
+
+	/**
+	 * Whether the variable name appears at a read site anywhere in the body,
+	 * regardless of which writes the read observed.
+	 */
+	public function isVariableEverRead(string $variableName): bool
+	{
+		return isset($this->readVariableNames[$variableName]);
 	}
 
 	/**

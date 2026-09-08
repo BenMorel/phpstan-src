@@ -35,6 +35,14 @@ final class UnusedVariableRule implements Rule
 			return [];
 		}
 
+		$namesWithReadWrite = [];
+		foreach ($node->getWrites() as $write) {
+			if (!$node->isRead($write)) {
+				continue;
+			}
+			$namesWithReadWrite[$write->getVariableName()] = true;
+		}
+
 		$errors = [];
 		foreach ($node->getWrites() as $write) {
 			$name = $write->getVariableName();
@@ -56,8 +64,11 @@ final class UnusedVariableRule implements Rule
 			}
 
 			if (!$node->isRead($write)) {
-				$errors[] = RuleErrorBuilder::message($this->getMessage($write->getKind(), $name))
-					->identifier('variable.unused')
+				// A variable that is never read at all (an unused variable) is a stronger
+				// finding than a single dead store to a variable the body does read.
+				$unusedVariable = !isset($namesWithReadWrite[$name]) && !$node->isVariableEverRead($name);
+				$errors[] = RuleErrorBuilder::message($this->getMessage($write->getKind(), $name, $unusedVariable))
+					->identifier($unusedVariable ? 'variable.unused' : 'variable.unusedAssignment')
 					->line($write->getVariable()->getStartLine())
 					->build();
 				continue;
@@ -84,13 +95,17 @@ final class UnusedVariableRule implements Rule
 	/**
 	 * @param VariableWrite::KIND_* $kind
 	 */
-	private function getMessage(int $kind, string $variableName): string
+	private function getMessage(int $kind, string $variableName, bool $unusedVariable): string
 	{
 		switch ($kind) {
 			case VariableWrite::KIND_ASSIGN:
 			case VariableWrite::KIND_READ_MODIFY_WRITE:
 			case VariableWrite::KIND_ARRAY_DIM_WRITE:
 			case VariableWrite::KIND_LIST_ITEM:
+				if ($unusedVariable) {
+					return sprintf('Variable $%s is never read.', $variableName);
+				}
+
 				return sprintf('Value assigned to variable $%s is never read.', $variableName);
 			case VariableWrite::KIND_INC:
 				return sprintf('Value of variable $%s after ++ is never read.', $variableName);

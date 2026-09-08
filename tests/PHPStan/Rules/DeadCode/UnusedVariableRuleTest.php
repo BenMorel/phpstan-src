@@ -21,7 +21,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/unused-variable.php'], [
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				27,
 			],
 			[
@@ -29,7 +29,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				32,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				40,
 			],
 			[
@@ -37,27 +37,27 @@ class UnusedVariableRuleTest extends RuleTestCase
 				46,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				70,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				76,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				93,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				95,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				101,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				113,
 			],
 			[
@@ -73,7 +73,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				133,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				148,
 			],
 			[
@@ -81,7 +81,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				157,
 			],
 			[
-				'Value assigned to variable $x is never read.',
+				'Variable $x is never read.',
 				223,
 			],
 			[
@@ -93,19 +93,19 @@ class UnusedVariableRuleTest extends RuleTestCase
 				264,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				276,
 			],
 			[
-				'Value assigned to variable $f is never read.',
+				'Variable $f is never read.',
 				283,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				303,
 			],
 			[
-				'Value assigned to variable $x is never read.',
+				'Variable $x is never read.',
 				337,
 			],
 			[
@@ -113,15 +113,15 @@ class UnusedVariableRuleTest extends RuleTestCase
 				422,
 			],
 			[
-				'Value assigned to variable $b is never read.',
+				'Variable $b is never read.',
 				614,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				632,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				637,
 			],
 			[
@@ -129,7 +129,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				703,
 			],
 			[
-				'Value assigned to variable $a is never read.',
+				'Variable $a is never read.',
 				739,
 			],
 			[
@@ -143,6 +143,14 @@ class UnusedVariableRuleTest extends RuleTestCase
 			[
 				'Value of variable $i after -- is never read.',
 				864,
+			],
+			[
+				'Value assigned to variable $x is never read.',
+				870,
+			],
+			[
+				'Foreach value variable $v is never read.',
+				877,
 			],
 		]);
 	}
@@ -166,7 +174,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/bug-12789.php'], [
 			[
-				'Value assigned to variable $RetVal is never read.',
+				'Variable $RetVal is never read.',
 				12,
 			],
 		]);
@@ -190,7 +198,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/bug-14258.php'], [
 			[
-				'Value assigned to variable $cutsomerId is never read.',
+				'Variable $cutsomerId is never read.',
 				15,
 			],
 		]);
@@ -224,15 +232,15 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/bug-10202.php'], [
 			[
-				'Value assigned to variable $x is never read.',
+				'Variable $x is never read.',
 				9,
 			],
 			[
-				'Value assigned to variable $x is never read.',
+				'Variable $x is never read.',
 				12,
 			],
 			[
-				'Value assigned to variable $x is never read.',
+				'Variable $x is never read.',
 				14,
 			],
 		]);
@@ -301,7 +309,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				26,
 			],
 			[
-				'Value assigned to variable $unused is never read.',
+				'Variable $unused is never read.',
 				32,
 			],
 			[

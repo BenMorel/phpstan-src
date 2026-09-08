@@ -30,7 +30,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		$this->assertSame(3, $error->getLine());
 
 		$error = $errors[1];
-		$this->assertSame('Value assigned to variable $foo is never read.', $error->getMessage());
+		$this->assertSame('Variable $foo is never read.', $error->getMessage());
 		$this->assertSame(3, $error->getLine());
 
 		$error = $errors[2];
@@ -62,9 +62,9 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 	{
 		$errors = $this->runAnalyse(__DIR__ . '/data/anonymous-class-with-inherited-constructor.php');
 		$this->assertCount(2, $errors);
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[0]->getMessage());
 		$this->assertSame(17, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[1]->getMessage());
 		$this->assertSame(33, $errors[1]->getLine());
 	}
 
@@ -185,9 +185,9 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-12803.php');
 		$this->assertCount(2, $errors);
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[0]->getMessage());
 		$this->assertSame(14, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $b is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $b is never read.', $errors[1]->getMessage());
 		$this->assertSame(15, $errors[1]->getLine());
 	}
 
@@ -240,7 +240,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-14604.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $locations is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $locations is never read.', $errors[0]->getMessage());
 		$this->assertSame(17, $errors[0]->getLine());
 	}
 
@@ -249,11 +249,11 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-13424.php');
 		$this->assertCount(3, $errors);
-		$this->assertSame('Value assigned to variable $hello is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $hello is never read.', $errors[0]->getMessage());
 		$this->assertSame(10, $errors[0]->getLine());
 		$this->assertSame('Instantiated class Bug13424\Hello not found.', $errors[1]->getMessage());
 		$this->assertSame(14, $errors[1]->getLine());
-		$this->assertSame('Value assigned to variable $hello is never read.', $errors[2]->getMessage());
+		$this->assertSame('Variable $hello is never read.', $errors[2]->getMessage());
 		$this->assertSame(14, $errors[2]->getLine());
 	}
 
@@ -311,7 +311,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// false positive
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-3468.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $element is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $element is never read.', $errors[0]->getMessage());
 		$this->assertSame(18, $errors[0]->getLine());
 	}
 
@@ -387,7 +387,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		$errors = $this->runAnalyse(__DIR__ . '/../Rules/Generics/data/bug-3769.php');
 		$this->assertCount(11, $errors);
 		foreach ([13, 29, 30, 31, 40, 75, 76, 77, 78, 108, 111] as $i => $line) {
-			$this->assertSame('Value assigned to variable $a is never read.', $errors[$i]->getMessage());
+			$this->assertSame('Variable $a is never read.', $errors[$i]->getMessage());
 			$this->assertSame($line, $errors[$i]->getLine());
 		}
 	}
@@ -428,7 +428,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-4713.php');
 		$this->assertCount(2, $errors);
 		$this->assertSame('Method Bug4713\Service::createInstance() should return Bug4713\Service but returns object.', $errors[0]->getMessage());
-		$this->assertSame('Value assigned to variable $service is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $service is never read.', $errors[1]->getMessage());
 		$this->assertSame(14, $errors[1]->getLine());
 
 		$reflectionProvider = self::createReflectionProvider();
@@ -620,7 +620,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 			],
 		);
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $c is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $c is never read.', $errors[0]->getMessage());
 		$this->assertSame(9, $errors[0]->getLine());
 	}
 
@@ -748,17 +748,17 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		$this->assertCount(7, $errors);
 		$this->assertSame('Parameter #1 $flags of static method Bug6160\HelloWorld::split() expects 0|1|2, 94561 given.', $errors[0]->getMessage());
 		$this->assertSame(19, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[1]->getMessage());
 		$this->assertSame(19, $errors[1]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[2]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[2]->getMessage());
 		$this->assertSame(20, $errors[2]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[3]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[3]->getMessage());
 		$this->assertSame(21, $errors[3]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[4]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[4]->getMessage());
 		$this->assertSame(22, $errors[4]->getLine());
 		$this->assertSame('Parameter #1 $flags of static method Bug6160\HelloWorld::split() expects 0|1|2, \'sdf\' given.', $errors[5]->getMessage());
 		$this->assertSame(23, $errors[5]->getLine());
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[6]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[6]->getMessage());
 		$this->assertSame(23, $errors[6]->getLine());
 	}
 
@@ -1069,7 +1069,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-8078.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $closure is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $closure is never read.', $errors[0]->getMessage());
 		$this->assertSame(9, $errors[0]->getLine());
 	}
 
@@ -1160,9 +1160,9 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		$this->assertCount(3, $errors);
 		$this->assertSame('Foreach key variable $index is never read.', $errors[0]->getMessage());
 		$this->assertSame(24, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $noteTitle is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $noteTitle is never read.', $errors[1]->getMessage());
 		$this->assertSame(25, $errors[1]->getLine());
-		$this->assertSame('Value assigned to variable $noteSource is never read.', $errors[2]->getMessage());
+		$this->assertSame('Variable $noteSource is never read.', $errors[2]->getMessage());
 		$this->assertSame(26, $errors[2]->getLine());
 	}
 
@@ -1287,7 +1287,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-13492.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $customer is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $customer is never read.', $errors[0]->getMessage());
 		$this->assertSame(56, $errors[0]->getLine());
 	}
 
@@ -1417,7 +1417,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-11026.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $a is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $a is never read.', $errors[0]->getMessage());
 		$this->assertSame(6, $errors[0]->getLine());
 	}
 
@@ -1473,9 +1473,9 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// false negative
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-11598.php');
 		$this->assertCount(2, $errors);
-		$this->assertSame('Value assigned to variable $foo is never read.', $errors[0]->getMessage());
+		$this->assertSame('Variable $foo is never read.', $errors[0]->getMessage());
 		$this->assertSame(9, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $foo is never read.', $errors[1]->getMessage());
+		$this->assertSame('Variable $foo is never read.', $errors[1]->getMessage());
 		$this->assertSame(14, $errors[1]->getLine());
 	}
 

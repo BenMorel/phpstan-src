@@ -863,3 +863,17 @@ function decrementLast(): void
 	sink($i);
 	$i--; // unused $i
 }
+
+function readBeforeOnlyWrite(): void
+{
+	sink($x ?? null);
+	$x = 2; // a dead store, not an unused variable: $x is read above
+}
+
+function foreachValueOverwritesUsedVariable(): void
+{
+	$v = 1;
+	sink($v);
+	foreach ([1, 2] as $v) { // unused $v
+	}
+}
