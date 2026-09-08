@@ -75,7 +75,7 @@ final class PostIncHandler implements ExprHandler
 				$virtualExpr,
 				$nodeCallback,
 				$virtualExprResult,
-				VariableWrite::KIND_INC,
+				VariableWrite::KIND_POST_INC,
 			)->getScope(),
 			beforeScope: $scope,
 			expr: $expr,

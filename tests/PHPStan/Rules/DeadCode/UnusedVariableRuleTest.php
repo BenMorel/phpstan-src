@@ -152,6 +152,14 @@ class UnusedVariableRuleTest extends RuleTestCase
 				'Foreach value variable $v is never read.',
 				877,
 			],
+			[
+				'Value of variable $i after ++ is never read.',
+				885,
+			],
+			[
+				'Value of variable $i after -- is never read.',
+				892,
+			],
 		]);
 	}
 

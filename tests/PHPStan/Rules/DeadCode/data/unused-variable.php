@@ -877,3 +877,17 @@ function foreachValueOverwritesUsedVariable(): void
 	foreach ([1, 2] as $v) { // unused $v
 	}
 }
+
+function preIncrementLast(): void
+{
+	$i = 0;
+	sink($i);
+	++$i; // unused $i
+}
+
+function preDecrementLast(): void
+{
+	$i = 10;
+	sink($i);
+	--$i; // unused $i
+}
