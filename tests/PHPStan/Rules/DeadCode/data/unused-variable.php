@@ -856,3 +856,10 @@ function closureBodyWritesStayInClosure(): void
 	};
 	sink($f());
 }
+
+function decrementLast(): void
+{
+	$i = 10;
+	sink($i);
+	$i--; // unused $i
+}

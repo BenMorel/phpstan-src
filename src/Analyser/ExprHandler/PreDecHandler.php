@@ -77,7 +77,7 @@ final class PreDecHandler implements ExprHandler
 				$expr,
 				$nodeCallback,
 				$incDecValueResult,
-				VariableWrite::KIND_INC_DEC,
+				VariableWrite::KIND_DEC,
 			)->getScope(),
 			beforeScope: $scope,
 			expr: $expr,

@@ -75,7 +75,7 @@ final class PostDecHandler implements ExprHandler
 				$virtualExpr,
 				$nodeCallback,
 				$virtualExprResult,
-				VariableWrite::KIND_INC_DEC,
+				VariableWrite::KIND_DEC,
 			)->getScope(),
 			beforeScope: $scope,
 			expr: $expr,

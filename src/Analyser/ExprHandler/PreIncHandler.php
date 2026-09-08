@@ -77,7 +77,7 @@ final class PreIncHandler implements ExprHandler
 				$expr,
 				$nodeCallback,
 				$incDecValueResult,
-				VariableWrite::KIND_INC_DEC,
+				VariableWrite::KIND_INC,
 			)->getScope(),
 			beforeScope: $scope,
 			expr: $expr,

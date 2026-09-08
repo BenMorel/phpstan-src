@@ -92,15 +92,16 @@ final class UnusedVariableRule implements Rule
 			case VariableWrite::KIND_ARRAY_DIM_WRITE:
 			case VariableWrite::KIND_LIST_ITEM:
 				return sprintf('Value assigned to variable $%s is never read.', $variableName);
-			case VariableWrite::KIND_INC_DEC:
-				return sprintf('Variable $%s value after operation %s is never read.', $variableName);
+			case VariableWrite::KIND_INC:
+				return sprintf('Value of variable $%s after ++ is never read.', $variableName);
+			case VariableWrite::KIND_DEC:
+				return sprintf('Value of variable $%s after -- is never read.', $variableName);
 			case VariableWrite::KIND_FOREACH_VALUE:
 				return sprintf('Foreach value variable $%s is never read.', $variableName);
 			case VariableWrite::KIND_FOREACH_KEY:
 				return sprintf('Foreach key variable $%s is never read.', $variableName);
 			case VariableWrite::KIND_CATCH:
 				return sprintf('Catch variable $%s is never read.', $variableName);
-
 		}
 
 		throw new ShouldNotHappenException(sprintf('Unhandled variable write kind %d', $kind));

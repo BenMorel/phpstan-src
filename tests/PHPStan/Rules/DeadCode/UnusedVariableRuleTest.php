@@ -61,15 +61,15 @@ class UnusedVariableRuleTest extends RuleTestCase
 				113,
 			],
 			[
-				'Value assigned to variable $k is never read.',
+				'Foreach key variable $k is never read.',
 				119,
 			],
 			[
-				'Value assigned to variable $v is never read.',
+				'Foreach value variable $v is never read.',
 				126,
 			],
 			[
-				'Value assigned to variable $v is never read.',
+				'Foreach value variable $v is never read.',
 				133,
 			],
 			[
@@ -77,7 +77,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				148,
 			],
 			[
-				'Value assigned to variable $i is never read.',
+				'Value of variable $i after ++ is never read.',
 				157,
 			],
 			[
@@ -140,6 +140,10 @@ class UnusedVariableRuleTest extends RuleTestCase
 				'Value assigned to variable $tags is never read.',
 				840,
 			],
+			[
+				'Value of variable $i after -- is never read.',
+				864,
+			],
 		]);
 	}
 
@@ -148,7 +152,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/unused-variable-php8.php'], [
 			[
-				'Value assigned to variable $e is never read.',
+				'Catch variable $e is never read.',
 				23,
 			],
 			[
@@ -176,7 +180,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 				14,
 			],
 			[
-				'Value assigned to variable $item is never read.',
+				'Foreach value variable $item is never read.',
 				41,
 			],
 		]);
@@ -245,7 +249,7 @@ class UnusedVariableRuleTest extends RuleTestCase
 	{
 		$this->analyse([__DIR__ . '/data/unused-variable-catch.php'], [
 			[
-				'Value assigned to variable $e is never read.',
+				'Catch variable $e is never read.',
 				9,
 			],
 		]);

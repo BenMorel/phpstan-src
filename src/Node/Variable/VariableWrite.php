@@ -16,14 +16,15 @@ final class VariableWrite
 
 	public const KIND_ASSIGN = 1;
 	public const KIND_READ_MODIFY_WRITE = 2;
-	public const KIND_INC_DEC = 3;
-	public const KIND_ARRAY_DIM_WRITE = 4;
-	public const KIND_LIST_ITEM = 5;
-	public const KIND_FOREACH_VALUE = 6;
-	public const KIND_FOREACH_KEY = 7;
-	public const KIND_CATCH = 8;
-	public const KIND_PARAMETER = 9;
-	public const KIND_CLOSURE_USE = 10;
+	public const KIND_INC = 3;
+	public const KIND_DEC = 4;
+	public const KIND_ARRAY_DIM_WRITE = 5;
+	public const KIND_LIST_ITEM = 6;
+	public const KIND_FOREACH_VALUE = 7;
+	public const KIND_FOREACH_KEY = 8;
+	public const KIND_CATCH = 9;
+	public const KIND_PARAMETER = 10;
+	public const KIND_CLOSURE_USE = 11;
 
 	private VariableWrittenExpr $markerExpr;
 

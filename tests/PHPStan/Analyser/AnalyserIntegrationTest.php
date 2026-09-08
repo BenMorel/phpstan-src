@@ -176,7 +176,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 	{
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-14548.php');
 		$this->assertCount(1, $errors);
-		$this->assertSame('Value assigned to variable $priorityName is never read.', $errors[0]->getMessage());
+		$this->assertSame('Foreach value variable $priorityName is never read.', $errors[0]->getMessage());
 		$this->assertSame(18, $errors[0]->getLine());
 	}
 
@@ -1033,13 +1033,13 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 		// crash
 		$errors = $this->runAnalyse(__DIR__ . '/data/bug-7918.php');
 		$this->assertCount(4, $errors);
-		$this->assertSame('Value assigned to variable $arr2 is never read.', $errors[0]->getMessage());
+		$this->assertSame('Foreach key variable $id is never read.', $errors[0]->getMessage());
 		$this->assertSame(33, $errors[0]->getLine());
-		$this->assertSame('Value assigned to variable $id is never read.', $errors[1]->getMessage());
+		$this->assertSame('Foreach value variable $arr2 is never read.', $errors[1]->getMessage());
 		$this->assertSame(33, $errors[1]->getLine());
-		$this->assertSame('Value assigned to variable $arr2 is never read.', $errors[2]->getMessage());
+		$this->assertSame('Foreach key variable $id is never read.', $errors[2]->getMessage());
 		$this->assertSame(91, $errors[2]->getLine());
-		$this->assertSame('Value assigned to variable $id is never read.', $errors[3]->getMessage());
+		$this->assertSame('Foreach value variable $arr2 is never read.', $errors[3]->getMessage());
 		$this->assertSame(91, $errors[3]->getLine());
 	}
 
@@ -1158,7 +1158,7 @@ class AnalyserIntegrationTest extends PHPStanTestCase
 	{
 		$errors = $this->runAnalyse(__DIR__ . '/data/pr-2030.php');
 		$this->assertCount(3, $errors);
-		$this->assertSame('Value assigned to variable $index is never read.', $errors[0]->getMessage());
+		$this->assertSame('Foreach key variable $index is never read.', $errors[0]->getMessage());
 		$this->assertSame(24, $errors[0]->getLine());
 		$this->assertSame('Value assigned to variable $noteTitle is never read.', $errors[1]->getMessage());
 		$this->assertSame(25, $errors[1]->getLine());
